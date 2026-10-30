@@ -1,4 +1,4 @@
-const { Plugin, Menu, requestUrl } = require("obsidian");
+const { Plugin, Menu, Notice, requestUrl } = require("obsidian");
 
 const COMMUNITY_LIST_URL =
   "https://raw.githubusercontent.com/obsidianmd/obsidian-releases/master/community-plugins.json";
@@ -9,7 +9,7 @@ const isEl = (n) => !!n && n.nodeType === 1 && typeof n.closest === "function";
 
 module.exports = class ReleaseNotesLink extends Plugin {
   async onload() {
-    this.repos = {}; // plugin id -> "owner/repo"
+    this.repos = null; // Map of plugin id -> "owner/repo", fetched on first click
     this.lastClick = null; // { id, time }
     this.observers = [];
     this.attachedDocs = new Set();
@@ -42,12 +42,6 @@ module.exports = class ReleaseNotesLink extends Plugin {
         this.attachToWindow(win),
       ),
     );
-
-    // Load community plugin list (id -> repo)
-    try {
-      const res = await requestUrl({ url: COMMUNITY_LIST_URL });
-      for (const p of res.json) this.repos[p.id] = p.repo;
-    } catch (e) {}
   }
 
   attachToWindow(win) {
@@ -107,9 +101,26 @@ module.exports = class ReleaseNotesLink extends Plugin {
     if (!id && this.lastClick && Date.now() - this.lastClick.time < 5000) {
       id = this.lastClick.id;
     }
-    if (!id) return null;
-    const repo = this.repos[id];
-    return repo ? { id, repo } : null;
+    return id ? { id } : null;
+  }
+
+  // Fetch the community list on first use, then open the plugin's releases page
+  async openReleases(id) {
+    try {
+      if (!this.repos) {
+        const res = await requestUrl({ url: COMMUNITY_LIST_URL });
+        this.repos = new Map(res.json.map((p) => [p.id, p.repo]));
+      }
+    } catch (e) {
+      new Notice("Couldn't load the community plugin list.");
+      return;
+    }
+    const repo = this.repos.get(id);
+    if (!repo || !/^[\w.-]+\/[\w.-]+$/.test(repo)) {
+      new Notice("No GitHub repo found for this plugin.");
+      return;
+    }
+    window.open(`https://github.com/${repo}/releases`);
   }
 
   // Path A: Menu object
@@ -136,9 +147,7 @@ module.exports = class ReleaseNotesLink extends Plugin {
     menu.addItem((item) => {
       item
         .setTitle("View release notes")
-        .onClick(() =>
-          window.open(`https://github.com/${target.repo}/releases`),
-        );
+        .onClick(() => this.openReleases(target.id));
       // Join the same section/group as the reference item, otherwise the menu
       // puts section-less items at the very end.
       if (ref.section !== undefined && typeof item.setSection === "function") {
@@ -182,7 +191,7 @@ module.exports = class ReleaseNotesLink extends Plugin {
     item.innerHTML =
       '<div class="menu-item-icon"></div><div class="menu-item-title">View release notes</div>';
     item.addEventListener("click", () => {
-      window.open(`https://github.com/${target.repo}/releases`);
+      this.openReleases(target.id);
       doc.body.dispatchEvent(
         new doc.defaultView.MouseEvent("mousedown", { bubbles: true }),
       );
