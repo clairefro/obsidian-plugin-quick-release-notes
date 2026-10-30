@@ -9,4 +9,4 @@ Clone this repo (or download and copy main.js and manifest.json) into your vault
 
 Then restart Obsidian and enable Quick Release Notes under Settings → Community plugins.
 
-The folder name must match the id in manifest.json.
+The folder name must match the id in manifest.json (`quick-release-notes` unless modified by you).
