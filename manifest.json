@@ -1,0 +1,9 @@
+{
+  "id": "quick-release-notes",
+  "name": "Quick Release Notes",
+  "version": "1.0.0",
+  "minAppVersion": "1.0.0",
+  "description": "Adds a \"View release notes\" item to the three-dot menu of community plugins in Settings.",
+  "author": "Claire Froelich",
+  "isDesktopOnly": false
+}
