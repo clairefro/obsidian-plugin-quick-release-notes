@@ -5,7 +5,7 @@
 
 Clone this repo (or download and copy main.js and manifest.json) into your vault’s plugins folder:
 
-<your vault>/.obsidian/plugins/quick-release-notes/
+`<your vault>/.obsidian/plugins/quick-release-notes/`
 
 Then restart Obsidian and enable Quick Release Notes under Settings → Community plugins.
 
